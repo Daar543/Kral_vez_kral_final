@@ -1,4 +1,5 @@
 1. Program ZkousFin
+
 1.0 - Jak funguje tento program
 Program "ZkousFin" vygeneruje všechny možné pozice (tento soubor se dále bude označovat jako "databáze") které mohou vzniknout v koncovce "král a věž proti králi". Každé z těchto pozic přiřadí 
 hodnocení, které rozhodne o tom, zdali je daná pozice remíza, či za kolik nejvíce půltahů (jeden půltah = hraje bílý nebo černý) lze vynutit mat.
