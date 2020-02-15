@@ -21,6 +21,7 @@ def Profil():
                 seznam[i][2] = "X"
         return seznam
     def Celakoncovka(radky,sloupce,meto=0):
+        print("Řádky:",radky,"Sloupce:",sloupce)
         rantajm_zac = time.time()
         celkempoli = 2*(radky*sloupce)*(radky*sloupce-1)*(radky*sloupce-1)
         print("Horní odhad: ", celkempoli)
@@ -1514,11 +1515,11 @@ def Profil():
             purepozice[i] = purepozice[i][:-3]"""
         nasledne,predchozi,rantajm_pre = Stromekc()
         pozice = Remizyzero(pozice)
-        Pis("Remizy_",pozice,radky,sloupce)
+        """Pis("Remizy_",pozice,radky,sloupce)
         Pispekne("Format_Remizy_",pozice,radky,sloupce)
         pozice = Remizyjedna(pozice)
         Pis("RemizyJ_",pozice,radky,sloupce)
-        Pispekne("Format_RemizyJ_",pozice,radky,sloupce)
+        Pispekne("Format_RemizyJ_",pozice,radky,sloupce)"""
         print("Počítám matování")
         Zapismatovepozice(pozice)
         """Pis("databaze_0_",pozice,radky,sloupce)
@@ -1679,9 +1680,11 @@ def Profil():
     print("A - náhodně","B - systematicky vzestupně (podle velikosti celé šachovnice)","C - systematicky sestupně (podle velikosti celé šachovnice)","jinak - jedna konkrétní velikost šachovnice","X - ukončit","",sep="\n")
     zpusob = input().lower()
     print()
-    print("Přepsat staré koncovky? A = ano, jinak ne")
-    prepsat = input().lower()
-    if prepsat == "a":
+    prepsat = None
+    if zpusob!="x":
+        print("Přepsat staré koncovky? A = ano, jinak ne")
+        prepsat = input().lower()
+    if prepsat != "a":
         bylo = cobylo(3,12)
     else:
         bylo = []

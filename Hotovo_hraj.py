@@ -4,21 +4,6 @@ import time
 #---
 def Hotovo(soubor,radky,sloupce):
     radky,sloupce = int(radky),int(sloupce)
-    def Deformat(soubor):
-        print(soubor)
-        with open(soubor, 'r') as f:
-            cteme = f.read()
-        # nahradíme
-        novy = cteme.replace(']\n[','],[' )
-        pis = '['+novy+']' #závorky na konec
-        cteme = None
-        # zapíšeme pod novým názvem
-        sos = soubor[7:]
-        """print(sos)
-        with open(sos, 'w+') as f:
-            f.write(pis)"""
-        print("dne")
-        return pis
     #Vytvoříme pure-databázi:
     print("Načítám")
     print(len(soubor))
@@ -29,10 +14,13 @@ def Hotovo(soubor,radky,sloupce):
             print("Přibližně celkem:",celkem)
             pocitadlo = 0
             for line in f:
+                line = line.replace("\n","")
                 pocitadlo += 1
                 if pocitadlo%(2**15) == 0:
                     print(pocitadlo)
-                podseznam = []
+                podseznam = eval(line)
+                #Kdyby "eval" nefungovalo:
+                """podseznam = []
                 ukazatel = 0
                 ukazuje = False
                 while ukazatel < len(line) and line[ukazatel] != "]":
@@ -57,7 +45,7 @@ def Hotovo(soubor,radky,sloupce):
                 try:
                     int(podseznam[4])
                 except ValueError:
-                    pass
+                    pass"""
                 databaze.append(podseznam)
     print("Načteno")
     puredatabaze = []
@@ -68,7 +56,11 @@ def Hotovo(soubor,radky,sloupce):
         puredatabaze.append(karap)
         #print(puredatabaze[-1:])
     #print(puredatabaze)
+    return databaze,puredatabaze
 
+
+
+def Nova_Partie(databaze,puredatabaze,radky,sloupce):
     #NORMÁLNÍ ŠACHOVÁ TERMINOLOGIE - NYNÍ
     def sloupec(x): #napíšu číslo, vrátí písmeno
         return chr(ord("a")-1+x)
@@ -77,7 +69,7 @@ def Hotovo(soubor,radky,sloupce):
     def SouradnicePole(x):#string na dvojici
         j = [0,0]
         j[0] = desloupec(x[0])
-        j[1] = int(x[1])
+        j[1] = int(x[1:])
         return j
     def NazevPole(x):#dvojici na string
         return str(sloupec(x[0]))+str(x[1])
@@ -169,7 +161,54 @@ def Hotovo(soubor,radky,sloupce):
             j[k] = "X" #odstraníme figuru ze šachovnice
             j[figura] = pole
         return j
-    def Explain_All_Moves(databaze,puredatabaze,cislo):
+    def easy_JeSach(databaze,cislopozice):
+            j = databaze[cislopozice]
+            sach = ""
+            if j[2] == "X" or j[0] == "X":
+                return "N"
+            else:
+                umisteniv = j[2]
+                radav = int(umisteniv[1])
+                sloupecv = desloupec(umisteniv[0])
+                umistenik = j[1]
+                radak = int(umistenik[1])
+                sloupeck = desloupec(umistenik[0])
+                #jsou na stejné řadě/sloupci?
+                if radav == radak or sloupecv == sloupeck: #může být šach
+                    umistenib = j[0] #neblokuje bílýkrál?
+                    sloupecb = desloupec(umistenib[0])
+                    radab = int(umistenib[1])
+                    if radav == radak:
+                        if radab == radav:
+                            if sloupecv>sloupeck: #napravo věž
+                                if sloupecb in range(sloupeck+1,sloupecv): #král mezinima
+                                    return "N"
+                                else:
+                                    return "C"
+                            else: #nalevo věž
+                                if sloupecb in range(sloupecv+1,sloupeck): #král mezinima
+                                    return "N"
+                                else:
+                                    return "C"
+                        else:
+                            return "C" #král je na jiné řadě
+                    else:
+                        if sloupecb == sloupecv:
+                            if radav>radak: #nad věž
+                                if radab in range(radak+1,radav): #král mezinima
+                                    return "N"
+                                else:
+                                    return "C"
+                            else: #pod věž
+                                if radab in range(radav+1,radak): #král mezinima
+                                    return "N"
+                                else:
+                                    return "C"
+                        else:
+                            return "C" #král je na jiném sloupci
+
+            return
+    """def Explain_All_Moves_old(databaze,puredatabaze,cislo):
         vsechny_tahy = []
         if databaze[cislo][3] == "B":
             tahy = TahyObec(databaze,cislo,0) #seznam cílových polí
@@ -194,6 +233,59 @@ def Hotovo(soubor,radky,sloupce):
                     novapoz = databaze[puredatabaze.index(novapoz)] #přehodím stranu, co je na tahu
                     if novapoz[4] != "Nex":
                         vsechny_tahy.append(["k",j,novapoz[4]]) #figura - cíl. pole - hodnocení
+        return vsechny_tahy
+    """
+    def Explain_All_Moves(databaze,puredatabaze,cislo):
+        vsechny_tahy = []
+        if databaze[cislo][3] == "B":
+            pocet = -1
+            na_indexovani = []
+            tahy = TahyObec(databaze,cislo,0) #seznam cílových polí
+            for j in tahy:
+                novapoz = Presunpozice(databaze,cislo,0,j)[:-3] #král
+                if JeLegalni(novapoz) and easy_JeSach([novapoz],0)!="B": #jestli nejedu do nemožné pozice
+                    pocet += 1
+                    novapoz.append(pocet)
+                    na_indexovani.append(novapoz)
+                    vsechny_tahy.append(["K",j,None]) #figura - cíl. pole - hodnocení
+            tahy = TahyObec(databaze,cislo,2) #to samé, ale s věží
+            for j in tahy:
+                novapoz = Presunpozice(databaze,cislo,2,j)[:-3] 
+                if JeLegalni(novapoz) and easy_JeSach([novapoz],0)!="B": #jestli nejedu do nemožné pozice
+                    pocet += 1
+                    novapoz.append(pocet)
+                    na_indexovani.append(novapoz)
+                    vsechny_tahy.append(["V",j,None]) #figura - cíl. pole - hodnocení
+        else: #černý
+            pocet = -1
+            na_indexovani = []
+            tahy = TahyObec(databaze,cislo,1) #seznam cílových polí
+            for j in tahy:
+                
+                novapoz = Presunpozice(databaze,cislo,1,j)[:-3] 
+                if JeLegalni(novapoz) and easy_JeSach([novapoz],0)!="C": #jestli nejedu do nemožné pozice
+                    pocet += 1
+                    novapoz.append(pocet)
+                    na_indexovani.append(novapoz)
+                    vsechny_tahy.append(["k",j,None]) #figura - cíl. pole - hodnocení
+        na_indexovani.sort()
+        zara  = 0
+        prepisovy = [[-1,-1] for i in range(len(na_indexovani))]
+        for i in range(len(na_indexovani)):
+            poop = na_indexovani[i].pop()
+            zara = puredatabaze.index(na_indexovani[i],zara)
+            prepisovy[i] = [poop,zara]
+        prepisovy.sort()
+        if databaze[cislo][3] == "B":
+            for i in prepisovy: #Známe index cílové pozice, takže se na ni dostaneme a zjistíme její hodnocení - to pak napíšeme do seznamu "vsechny_tahy"
+                k,j = i[0],i[1]+len(databaze)//2 #Po tahu bílého je na tahu černý 
+                i[1] = databaze[j][4]
+                vsechny_tahy[k][2] = i[1]
+        else:
+            for i in prepisovy:
+                k,j = i[0],i[1]
+                i[1] = databaze[j][4]
+                vsechny_tahy[k][2] = i[1]
         return vsechny_tahy
     def Setridtahy(vsechnytahy,strana): #setřídí výstup Explain_All_Moves podle počtu tahů
         horlimit = 1
@@ -233,7 +325,46 @@ def Hotovo(soubor,radky,sloupce):
             print("B: K"+j[0]+"\nČ: K"+j[1])
         else:
             print("B: K"+j[0]+", V"+j[2],"\nČ: K"+j[1])
-            
+    def Blbuvzdornost(promenna,sloupce,radky):
+        promenna = None
+        while not promenna:
+            promenna = input(".").strip()
+            if promenna == "xx":
+                return "X"
+            sloup = promenna[0]
+            if desloupec(sloup) not in range(1,sloupce+1):
+                print("Tato šachovnice má jen",sloupce,"sloupce/ů, napiš znova")
+                promenna = None
+            else:
+                try:
+                    rada = int(promenna[1:]) 
+                except ValueError:
+                    promenna = None
+                finally:
+                    if rada not in range(1,radky+1):
+                        print("Tato šachovnice má jen",radky,"řad/y,napiš znova")
+                        promenna = None
+        return promenna
+    def Sestavpozici(radky,sloupce,puredatabaze):
+        K,V,k = None,None,None
+        print("Bílý král: ")
+        K = Blbuvzdornost(K,sloupce,radky)
+        print("Bílá věž (není-li, napiš xx):")
+        V = Blbuvzdornost(V,sloupce,radky)
+        print("Černý král: ")
+        k = Blbuvzdornost(k,sloupce,radky)
+        print("Bílý nebo černý na tahu? C/c černý, jinak bílý")
+        strana = input().strip()
+        if strana[0].lower() == "c":
+            strana = 1
+        else:
+            strana = 0
+        try: 
+            cislopzc = puredatabaze.index([K,k,V])+strana*len(puredatabaze)//2
+            return cislopzc
+        except ValueError: 
+            print("Zadaná pozice neexistuje")
+            return "Chyba"
     def Provedtah(vstup):
             vstup = vstup.replace(" ", "")
             if vstup[2] not in ("0123456789"):
@@ -337,7 +468,7 @@ def Hotovo(soubor,radky,sloupce):
         else:
             print ("Je mat, vyhral bily")
             return
-    def Hraj_CvC(databaze,puredatabaze,cislopozice=None,tahy=1,zapis=""): #rekurzivně, až do matu
+    def Hraj_CvC(databaze,puredatabaze,cislopozice=None,tahy=1,zapis="",auto = 0): #rekurzivně, až do matu
         j = databaze[cislopozice]
         t = cislopozice
         Vypis(j)
@@ -346,7 +477,10 @@ def Hotovo(soubor,radky,sloupce):
             return "Nelegalni"
         if j[4] == "R":
             print ("Remiza")
-            return
+            if zapis == "":
+                return "Není co zapisovat"
+            else:
+                return zapis
         elif j[4] != 0 and j[4] != "0":
             print("Hrac na tahu:",j[3])
             if zapis == "":
@@ -381,31 +515,40 @@ def Hotovo(soubor,radky,sloupce):
                 print("Blbost",vyber)
             time.sleep(0.2)
             zapis += (vyber[0].upper()+vyber[1])
+            if auto == 0:
+                autom = input("Další tah-Enter; Napiš A pro hru automaticky do konce")
+                if autom.lower() == "a":
+                    auto = 1
+                else:
+                    auto = 0
             print("Nova pozice:")
-            return Hraj_CvC(databaze,puredatabaze,databaze.index(novapozice),tahy,zapis)
+            return Hraj_CvC(databaze,puredatabaze,databaze.index(novapozice),tahy,zapis,auto)
         else:
-            print ("Je mat, vyhral bily")
-            return zapis
-    print("Nahrána databáze? Dobré. Jak to chceš?")
+            if zapis == "":
+                return "Není co zapisovat"
+            else:
+                return zapis
+    """print("Nahrána databáze? Dobré. Jak to chceš?")
     print("A: vlastní tahy za obě strany\nB: Ty proti počítači\nC: Počítač proti sobě")
-    cor = input()
-    if type(cor) == str:
+    cor = input()"""
+    cor = "c" #nechám počítač vs počítač jako defaultní možnost, auto-input řešit nebudu
+    """if type(cor) == str:
         #print(cor,"JO")
         cor=cor.casefold()
     while cor not in ("a","b","c"):
         print("Err\n")
         cor = input()
         if type(cor) == str:
-            cor=cor.casefold()
+            cor=cor.casefold()"""
     cislopzc = -2
     
     while cislopzc == -2:
-              print("Dej:\n0 - pokud chceš pozici manuálně\n-1 - pokud náhodně\njiné číslo - konkrétní pozice v databázi")
+              print("Dej:\n0 - pokud chceš pozici manuálně\n-1 - pokud náhodně\njiné číslo - konkrétní řádek pozice v databázi")
               k = input()
               try:
                   k = int(k)
-                  if k not in range(-1,len(databaze)+1): #nulu mám speciálně vyhrazenou
-                      print("Taková pozice není v databázi, má jen",len(databaze),"řádků.")
+                  if k not in range(-1,len(databaze)+1): #nulu a -1 mám speciálně vyhrazenou
+                      print("Taková pozice není v databázi, má jen",len(databaze),"řádků, a neberu záporná čísla.")
                   else:
                     cislopzc = k
               except ValueError:
@@ -413,8 +556,11 @@ def Hotovo(soubor,radky,sloupce):
                   pass
 
     if cislopzc == 0:
-        zacatecni = Sestavpozici(radky,sloupce)
-        cislopzc = puredatabaze.index(zacatecni)+1
+        zacatecni = Sestavpozici(radky,sloupce,puredatabaze)
+        while zacatecni == "Chyba" or databaze[zacatecni][4] == "Nex":
+            print("Pozice neexistuje")
+            zacatecni = Sestavpozici(radky,sloupce,puredatabaze)
+        cislopzc = zacatecni
     elif cislopzc == -1:
         a = "x"
         while a == "x":
@@ -434,17 +580,18 @@ def Hotovo(soubor,radky,sloupce):
         while databaze[cislopzc][4] == "Nex":
             cislopzc = random.randint(0,len(databaze)//2-1)+a*len(databaze)//2
     if cor == "a":
-        zapsane = Hraj(databaze,puredatabaze,cislopzc) #začínám od nuly - první pozice = nultý řádek
+        zapsane = Hraj(databaze,puredatabaze,cislopzc-1) #začínám od nuly - první pozice = nultý řádek
     elif cor == "b":
-        zapsane = Hraj_PvC(databaze,puredatabaze,cislopzc)
+        zapsane = Hraj_PvC(databaze,puredatabaze,cislopzc-1)
     elif cor == "c":
-        zapsane = Hraj_CvC(databaze,puredatabaze,cislopzc)
+        zapsane = Hraj_CvC(databaze,puredatabaze,cislopzc-1)
     else:
         print(cor)
         print("Jakýže styl hry jsi chtěl? Nějaká blbost. Restartuj program")
         raise ValueError
     print("\n\n\nPůvodní pozice:")
     Vypis(databaze,cislopzc)
+    print("Číslo pozice:",cislopzc)
     print("\n\n\nZápis:")
     print(zapsane)
     input()
@@ -509,6 +656,8 @@ try:
 except ValueError:
     print("Nemám databázi pro tuto šachovnici. Nejdříve ji vygeneruj.")
 if soubor:
-    Hotovo(zacatek,a,b)
-
-
+    dtb,prdtb = Hotovo(zacatek,a,b)
+    znova = True
+    while znova != "x":
+        Nova_Partie(dtb,prdtb,int(a),int(b))
+        znova = input("\n\n\n\nNová partie? Pokud chceš ukončit, napiš X ").lower()
