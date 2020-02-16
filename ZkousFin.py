@@ -20,7 +20,7 @@ def Profil():
             if seznam[i][2]== chr(ord("a")-1):
                 seznam[i][2] = "X"
         return seznam
-    def Celakoncovka(radky,sloupce,meto=0):
+    def Celakoncovka(radky,sloupce):
         print("Řádky:",radky,"Sloupce:",sloupce)
         rantajm_zac = time.time()
         celkempoli = 2*(radky*sloupce)*(radky*sloupce-1)*(radky*sloupce-1)
@@ -29,18 +29,21 @@ def Profil():
         zacatek_ocislovani = 2**15
         kontrola_ocislovani = 2**16
         kontrola_vypisovani = 2**13
+        kontrola_matovani = 2**16
         #ORIENTACE NA ŠACHOVNICI
         def sloupec(x): #napíšu číslo, vrátí písmeno
             return chr(ord("a")-1+x)
         def desloupec(x): #písmeno sloupce na číslo
             return ord(x)+1-ord("a")
-        def SouradnicePole(x):#string na dvojici
+        def SouradnicePole(nazevpole):#string na dvojici
             j = [0,0]
-            j[0] = desloupec(x[0])
-            j[1] = int(x[1])
+            j[0] = desloupec(nazevpole[0])
+            j[1] = int(nazevpole[1:])
             return j
-        def NazevPole(x):#dvojici na string
-            return str(sloupec(x[0]))+str(x[1])
+        def NazevPole(souradnice):#dvojici na string
+            n = str(sloupec(souradnice[0]))+str(souradnice[1])
+            return n
+            
 
         #ZÁPIS DO SOUBORU
         def Pis(nazev,pozice,radky,sloupce):
@@ -62,10 +65,7 @@ def Profil():
                 soubor.write("\n")
             soubor.close()
             print("Zapsano do souboru ",sou)
-        def Odmazkonec(seznam):
-            while seznam[-1] in [None,"",0,"0"]:
-                seznam.pop()
-            return seznam
+
         def Zaklad(soubor):
             with open(soubor,"r") as s:
                 ss = s.read()
@@ -151,35 +151,17 @@ def Profil():
         maxsloupec = sloupec(sloupce)
         maxradek = radky
 
-        def Cas(promenna, ti = 0):
-                if promenna%1024 == 0:
-                    tim = ti+1
-                    ti = time.time()
-                    print(promenna//1024,": ",ti+1-tim," sek")
-
-
-
         #GENEROVÁNÍ FIGUR
         def Generuj():
             pocetfigur = 3
             #seznam figur
-            pozice=[]
-            Kb = None
-            Kc = None
-            V = None
-            pozice.append([Kb,Kc,V])   #pozice bez figur
+            inicial = [None]*pocetfigur
+            pozice = [inicial[:]]
+            #pozice bez figur
             vsechnypozice = []
 
             #Obecně funkce rozmistění
             #Nelegální pozice - bez krále
-            def JeLegalni(konpozice):
-                if konpozice[1] == "X" or konpozice[0] == "X":
-                    return False
-                bilkra = SouradnicePole(konpozice[0])
-                cerkra = SouradnicePole(konpozice[1])
-                if bilkra[0]-cerkra[0] in range(-1,2) and bilkra[1]-cerkra[1] in range(-1,2):
-                    return False
-                return True
             def ZrusNelegal(databaze): #do nové databáze přesune jen legální pozice
                 novadatab = []
                 for i in range(len(databaze)):
@@ -233,14 +215,11 @@ def Profil():
                         #print(zkouma)
                         zkoumacopy = zkouma[:]
                         pozice.append(zkoumacopy)
-                        if (len(pozice)+1)%2097152== 0:
+                        if (len(pozice)+1)%kontrola_generovani== 0:
                            print(len(pozice))
-                           if (len(pozice)+1)%8388608== 0:
-                               pozice = VedleKral(pozice)
-                               print("x",len(pozice),"x")
                 return pozice 
             pozice = umisti(pozice,0)
-            #zopakuji postup pro všechny další figury, přičemž zachovávám i možnost, kdy všechny fugury nebudou na šachovnici
+            #zopakuji postup pro všechny další figury, přičemž zachovávám i možnost, kdy všechny figury nebudou na šachovnici
             for k in range(pocetfigur-1):
                 for i in range(len(pozice)):
                     umisti(pozice,i)
@@ -275,7 +254,6 @@ def Profil():
                 k.append("C")
                 k.append(None)
                 databaze.append(k) #přidá pozici s černým na tahu na konec DTB
-                #Mohl bych nyní i eliminovat pozice, kde je na tahu strana dávající šach - to však vyžaduje testování funkce "JeSach", kde nároky mohou být velké (věž se může pohybovat na (řádky+sloupce) polí, a toto bych musel ověřit u každé pozice).
             return databaze
         def Redukuj(databaze): #zruší opakování
             databazen = [] #nová dtb
@@ -285,14 +263,14 @@ def Profil():
                     continue
                 else:
                     databazen.append(databaze[i])
-            databazen.append(databaze[len(databaze)-1]) #poslední pozici nemůžu s ničím porovnávat
+            databazen.append(databaze[-1]) #poslední pozici nemůžu s ničím porovnávat
             databaze = [] #zahodím
             return databazen
 
         #ROZDĚLENÍ POLÍ - OBSAZENÉ, NEOBSAZENÉ
-        def Obsazene(CilPole,Rozmisteni): #které pole; kde stojí figury
-            for i in range(len(Rozmisteni)):
-                if Rozmisteni[i] == CilPole:
+        def Obsazene(CilPole,Pozice): #které pole; kde stojí figury
+            for i in range(len(Pozice)):
+                if Pozice[i] == CilPole:
                     return i%2 #i%2 - barva kamene (sudá/lichá) #bílé 0, černé 1
             return -1 #pole není obsazeno
         
@@ -309,6 +287,7 @@ def Profil():
                         v -=1
                         if seznam == []:
                             break
+            return seznam
         #NA PRÁZDNÉ ŠACHOVNICI
 
         #King
@@ -325,7 +304,7 @@ def Profil():
                                 tahy[n] = [sloupec + i, rada + j]
                                 tahy[n] = NazevPole(tahy[n])
                                 n += 1
-            OdmazKonec(tahy)
+            tahy = OdmazKonec(tahy)
             return tahy"""
 
         #Věž
@@ -348,7 +327,7 @@ def Profil():
                         tahy[n] = [sloupec, rada+j]
                         tahy[n] = NazevPole(tahy[n])
                         n += 1
-            OdmazKonec(tahy)
+            tahy = OdmazKonec(tahy)
             return tahy"""
         def TahKralem(konpozice,kde): #umisteni krale
             kde= konpozice[kde]
@@ -361,6 +340,7 @@ def Profil():
                         if sloupek +i <= sloupce and sloupek + i > 0 and rada + j <= radky and rada + j > 0:
                                 tahy.append(NazevPole([sloupek + i, rada + j])) 
             return tahy
+
         def MuzeVez(konpozice,kde=2):
             kde= konpozice[kde]
             #print(konpozice)
@@ -374,7 +354,7 @@ def Profil():
                     if r not in konpozice:
                         tahy.append(r)
                     else:
-                        if konpozice.index(r) == 1:
+                        if (konpozice.index(r)) %2 == 1:
                             tahy.append(r)
                         break
                 #DOPRAVA
@@ -383,7 +363,7 @@ def Profil():
                     if r not in konpozice:
                         tahy.append(r)
                     else:
-                        if konpozice.index(r) == 1:
+                        if (konpozice.index(r)) %2 == 1:
                             tahy.append(r)
                         break
                 #NAHORU
@@ -392,7 +372,7 @@ def Profil():
                     if r not in konpozice:
                         tahy.append(r)
                     else:
-                        if konpozice.index(r) == 1:
+                        if (konpozice.index(r)) %2 == 1:
                             tahy.append(r)
                         break
                 #DOLŮ
@@ -401,7 +381,7 @@ def Profil():
                     if r not in konpozice:
                         tahy.append(r)
                     else:
-                        if konpozice.index(r) == 1:
+                        if (konpozice.index(r)) %2 == 1:
                             tahy.append(r)
                         break
                 """#LH
@@ -494,17 +474,12 @@ def Profil():
                 return[]
 
         #CO JE NA CÍLOVÝCH POLÍCH
-        def Napada(databaze,cislo,figura,pole):
-            if pole in TahyNeom(databaze,cislo,figura,pole):
-                return True
-            return False
-
         def Vyhledej_indexy(seznam,velkyseznam,zacatek=0):
             indeseznam = []
-            ind = zacatek
-            for j in seznam: #sortovaný
-                ind = velkyseznam.index(j,ind)#začínáme u prvního indexu
-                indeseznam.append(ind)
+            zara = zacatek
+            for j in seznam: #setříděný
+                zara = velkyseznam.index(j,zara)#začínáme u prvního indexu
+                indeseznam.append(zara) #zarážka se posune na momentální index - seznam je setříděný, takže jsem žádný prvek nemohl přeskočit
                 #print(indeseznam)
                 #time.sleep(0.1)
             return indeseznam
@@ -543,18 +518,10 @@ def Profil():
                 return vysl
             else:
                 return[]"""
-        def TahyNeom(databaze,cislo,figura):
-            if figura == 0 or figura == 1:
-                return TahKralem(Polefigury(databaze,cislo,figura))
-            elif figura == 2:
-                l = databaze[cislo]
-                if l[2]!="X":
-                    return TahVezi(Polefigury(databaze,cislo,figura))
-            return
         def TahyObec(databaze,cislo,figura): #tahy nikoli neomezené, ale neřeším legalitu
-            if figura == 0 or figura == 1:
+            if figura == 0 or figura == 1: #král, bílý/černý
                 return TahKralem(databaze[cislo],figura) #vrací list
-            elif figura == 2:
+            elif figura == 2: #věž
                 return MuzeVez(databaze[cislo],figura) #vrací list
             return
         #VYHLEDÁVACÍ FUNKCE
@@ -564,8 +531,8 @@ def Profil():
             return ((Celapozice(databaze,cislo))[index])
         def Barvafigury(index):
             return (index%2)
-        def JeLegalni(konpozice):
-            if konpozice[1] == "X" or konpozice[0] == "X":
+        def JeLegalni(konpozice): #zkontroluje souřadnice obou králů; liší-li se v obou souřadnicích max. o 1, vzájemně se napadají
+            if konpozice[1] == "X" or konpozice[0] == "X": #v každé legální pozici musí být oba králové na šachovnici
                 return False
             bilkra = SouradnicePole(konpozice[0])
             cerkra = SouradnicePole(konpozice[1])
@@ -573,152 +540,7 @@ def Profil():
                 return False
             return True
                 
-
-
-        #PŘESKOČIT OBSAZENÁ POLE - VĚŽ
-        def BlokVezi(databaze,cislo,index): #mám dvě skupiny: blokovaná a všechna možná pole, všechna ostatní pole na šachovnici můžu ignorovat
-            obs = Charak(databaze,cislo,index,"obsa") #blok
-            vse = TahyNeom(databaze,cislo,index) #možná
-            #můžu využít toho, že věž se pohybuje jenom po řadě nebo sloupci, takže rozdělím na dva případy
-            rad = [] #stejná řada, mění se sloupec
-            sloup = [] #stejný sloupec, mění se řada
-            if vse:
-                j = vse[0] 
-            #jedná se o první pole, kam může naše věž 
-            for i in range(len(obs)):
-                k = obs[i]
-                if k[1] == j[1]: #index řady
-                    rad.append(k) #je-li zakázané pole na stejné řadě jako věž, řadí se do první skupiny, jinak (je na stejném sloupci) se řadí do druhé skupiny
-                else:
-                    sloup.append(k) #jiný případ nemůže nastat
-            #print ("Blokrada:",rad)
-            #print ("Bloksloup:",sloup)
-
-            #Je-li pole blokované, pak musí být všechna pole za ním nepřístupná
-            u = Polefigury(databaze,cislo,index)
-
-            blokrada = []
-            for i in range(len(rad)): #je to na řadě, ale mění se SLOUPEC
-                j = rad[i]
-                j = desloupec(j[0])
-                if desloupec(u[0]) < j: #figura je nalevo, ruší se pole napravo
-                    for k in range(j+1,sloupce+1):
-                        blokrada.append(sloupec(k)+u[1]) #seznam polí
-                elif desloupec(u[0]) > j: #figura je napravo, ruší se pole nalevo
-                    for k in range(1,j):
-                        blokrada.append(sloupec(k)+u[1]) #seznam polí
-            #print (blokrada)
-
-            bloksloupec = []
-            for i in range(len(sloup)):
-                j = sloup[i]
-                j = int(j[1])
-                if int(u[1]) < j: #figura je dole, ruší se pole nad
-                    for k in range(j+1,radky+1):
-                        bloksloupec.append(u[0]+str(k))
-                elif int(u[1]) > j: #figura je nahoře, ruší se pole pod
-                    for k in range (1,j):
-                        bloksloupec.append(u[0]+str(k))
-            blok = blokrada + bloksloupec
-            #print (blok)
-            return blok
-
-        #Legální tahy
-
-        #Věž
-
-        def hard_MuzeVez(databaze,cislo,figura):
-            l = databaze[cislo]
-            if l[figura] != "X":
-                zakaz = BlokVezi(databaze,cislo,figura)+Charak(databaze,cislo,figura,"vlas")
-                if zakaz:
-                    return (list(set(TahyNeom(databaze,cislo,figura)) - set(zakaz))) #všechny tahy - zakázané tahy; použit rozdíl množin
-                else:
-                    return TahyNeom(databaze,cislo,figura)
-            else:
-                return 
-        def BraniVez(databaze,cislo,figura):
-            br = [""]
-            j = Charak(databaze,cislo,figura,"soup")
-            k = MuzeVez(databaze,cislo,figura)
-            for i in range(len(j)):
-                if j[i] in k:
-                    br.append(j[i])
-            return br
-        #Král
-        
-        def LegalKral(databaze,cislo,figura,puredatabaze):
-            j = (TahyNeom(databaze,cislo,figura))[:] #seznam všech tahů
-            zakaz = []
-            for i in range(len(j)):
-                if DoSachu(databaze,cislo,figura,j[i],puredatabaze) == True:
-                    zakaz.append(j[i])
-            zakaz = zakaz+Charak(databaze,cislo,figura,"vlas")
-            return (list(set(TahyNeom(databaze,cislo,figura)) - set(zakaz)))
-        def NelegalKral(databaze,cislo,figura):
-            if figura == 1:
-                b = MuzeVez(databaze,cislo,2)
-                return b
-            else:
-                return []
-        
-        def DoSachu(databaze,cislo,figura,tah,puredatabaze):
-            a = easy_Presunpozice(databaze[cislo],figura,tah)
-            c = a[:-3]
-            if c in puredatabaze:
-                if figura == 1: #cerny tahne
-                    b = JeSach(databaze,puredatabaze.index(c))
-                    if b in ["C","O"]:
-                        return True
-                elif figura == 0: #bily tahne
-                    b = JeSach(databaze,puredatabaze.index(c))
-                    if b in ["B","O"]:
-                        return True
-                return False
-            else:
-                return True
-        def BraniKral(databaze,cislo,figura):
-            br = []
-            j = Charak(databaze,cislo,figura,"soup")
-            k = TahyNeom(databaze,cislo,figura)
-            for i in range(len(j)):
-                if j[i] in k:
-                    br.append(j[i])
-            return br
-        def Brani(databaze,cislo,figura):
-            if figura == 0 or figura == 1:
-                return BraniKral(databaze,cislo,figura)
-            elif figura == 2:
-                if figura  == "X":
-                    return
-                return BraniVez(databaze,cislo,figura)
-        #Je šach?
-        def JeSach(databaze,cislopozice):
-            sach = ""
-            j = (databaze[cislopozice])[:]
-            k = 0 #bílý král
-            for i in range(1,len(j)-2,2): #step 2 - jen figury opačné barvy
-                if j[i]!="X":
-                    x = Brani(databaze,cislopozice,i) #podmínky existence
-                    if x:
-                        if j[k] in x: #může-li být král sebrán figurou, i pokud nemůže táhnout kvůli šachu (proto neřeším legalitu - ta je založena na pravidlu "Je šach" a proto by se mi podmínky zacyklily).
-                            sach = "B"
-                            break
-            k = 1 #cerny kral
-            for i in range(0,len(j)-2,2): #step 2 - jen figury opačné barvy
-                if j[i]!="X":
-                    x = Brani(databaze,cislopozice,i)
-                    if x:
-                        if j[k] in x: #totéž
-                            if sach == "B":
-                                return "O"
-                            else:
-                                return "C"
-            if sach == "B":
-                return "B"
-            else:
-                return "N"
-        def JeMat(databaze,cislopozice,puredatabaze):
+        """def JeMat(databaze,cislopozice,puredatabaze):
             j = databaze[cislopozice]
             if j[2] == X:
                 return "N"
@@ -755,7 +577,7 @@ def Profil():
                                     return "Není" #není mat
                             else: #nelegální pozice, není v DTB
                                 continue
-                return "B"
+                return "B" """
         #Jednoduchá verze (efektivnější, ale ne obecná)
         def easy_JeSach(databaze,cislopozice):
             j = databaze[cislopozice]
@@ -764,16 +586,16 @@ def Profil():
                 return "N"
             else:
                 umisteniv = j[2]
-                radav = int(umisteniv[1])
+                radav = int(umisteniv[1:])
                 sloupecv = desloupec(umisteniv[0])
                 umistenik = j[1]
-                radak = int(umistenik[1])
+                radak = int(umistenik[1:])
                 sloupeck = desloupec(umistenik[0])
                 #jsou na stejné řadě/sloupci?
                 if radav == radak or sloupecv == sloupeck: #může být šach
                     umistenib = j[0] #neblokuje bílýkrál?
                     sloupecb = desloupec(umistenib[0])
-                    radab = int(umistenib[1])
+                    radab = int(umistenib[1:])
                     if radav == radak:
                         if radab == radav:
                             if sloupecv>sloupeck: #napravo věž
@@ -804,7 +626,7 @@ def Profil():
                             return "C" #král je na jiném sloupci
 
             return
-        def easy_JeMat(databaze,cislopozice,puredatabaze):
+        def exper_JeMat(databaze,cislopozice,puredatabaze):
             j = databaze[cislopozice]
             if j[5] == "C":
                 i=1
@@ -824,20 +646,20 @@ def Profil():
                                 continue
                 return "C"
             return
-        def primitiv_JeMat(konkretnipozice): #jenom pozice, a popisuje, jak matové pozice vypadají: #VRACÍ HODNOTU TRUE/FALSE, NE BILY/CERNY
+        def easy_JeMat(konkretnipozice): #jenom pozice, a popisuje, jak matové pozice vypadají: #VRACÍ HODNOTU TRUE/FALSE, NE BILY/CERNY
                 if konkretnipozice[5] != "C":
                     return False
                 p = konkretnipozice[1]
                 sloupeck = desloupec(p[0])
-                radak = int(p[1])
+                radak = int(p[1:])
                 p = konkretnipozice[0]
                 sloupecb = desloupec(p[0])
-                radab = int(p[1])
+                radab = int(p[1:])
                 p = konkretnipozice[2]
                 if p == "X":
                     return False
                 sloupecv = desloupec(p[0])
-                radav = int(p[1])
+                radav = int(p[1:])
                 if sloupeck == 1 and radak in (1,radky): #v rohu na sloupci a 
                     if sloupecb in (1,2) and radav == radak:
                         if sloupecv !=2:
@@ -885,50 +707,6 @@ def Profil():
         
 
         #4. PŘESUN
-        def Finalpozice(databaze,cislo,figura,pole,puredatabaze):
-            #Je tah legální(v seznamu možných tahů)?
-            if figura == 0 or figura == 1:
-                #print(TahyNeom(puredatabaze,cislo,figura),"...",NelegalKral(puredatabaze,cislo,figura))
-                if pole in TahyNeom(puredatabaze,cislo,figura) and pole not in NelegalKral(puredatabaze,cislo,figura):
-                    j = (databaze[cislo])[:]
-                    k = j[:-3]
-                    if pole in k:
-                        m = k.index(pole)
-                        if m%2 == figura%2:
-                            return "Nelegalni" #nemůžu brát svoji figuru
-                        else:
-                            k[k.index(pole)] = "X"
-                            k[figura] = pole
-                    else:
-                        k[figura]= pole
-                    f = ord("C")-ord(j[3]) #bílé 1, černé 0
-                    if k in puredatabaze:
-                        j = databaze[(puredatabaze.index(k)+(f*(len(databaze)//2)))] #hrál - li bílý, pak se přesunu do druhé půlky, kde hraje černý
-                    else:
-                        return "Nelegalni"
-                else:
-                    return "Nelegalni"
-            elif figura == 2:
-                if figura  == "X":
-                    return "Nelegalni"
-                if pole in MuzeVez(databaze,cislo,figura):
-                    j = (databaze[cislo])[:]
-                    k = j[:-3]
-                    if pole in k:
-                        k[k.index(pole)] = "X"
-                        k[figura] = pole
-                    else:
-                        k[figura]= pole
-                    f = ord("C")-ord(j[3]) #bílé 1, černé 0
-                    if k in puredatabaze:
-                        j = databaze[(puredatabaze.index(k)+(f*(len(databaze)//2)))] #hrál - li bílý, pak se přesunu do druhé půlky, kde hraje černý
-                    else:
-                        return "Nelegalni"
-                else:
-                    return "Nelegalni"
-            else:
-                return "Nelegalni"
-            return j
         def Presunpozice(databaze,cislo,figura,pole): #Narozdíl od Finalpozice toto pouze řeší vzniknutí nové pozice přesunutím dané figury
             j = (databaze[cislo])[:]
             if pole not in j: #jestli pole není obsazeno
@@ -975,7 +753,7 @@ def Profil():
                     #print (i,"",end="")
                     #x += 5
                 #Progress(i,len(databaze))
-                    if primitiv_JeMat(databaze[i]) == True:
+                    if easy_JeMat(databaze[i]) == True:
                         j = databaze[i]
                         j[4] = 0 #je mat, tzn. zbývá 0 tahů do matu
                         nultadatabaze.append(j)
@@ -1138,7 +916,7 @@ def Profil():
                     ti = time.time()
                     predb_seznam = []
                     for i in range(len(pozice)//2):  
-                        if i % (kontrola_vypisovani) == 0:
+                        if (i+1) % (kontrola_vypisovani) == 0:
                             tir = ti+1
                             ti = time.time()
                             print(i,": ",(ti+1-tir)," sek")
@@ -1197,7 +975,7 @@ def Profil():
                     predb_seznam = []
                     ti = time.time()
                     for i in range(len(pozice)//2,len(pozice)):  
-                        if i % (kontrola_vypisovani) == 0:
+                        if (i+1) % (kontrola_vypisovani) == 0:
                             tir = ti+1
                             ti = time.time()
                             print(i,": ",(ti+1-tir)," sek")
@@ -1264,7 +1042,7 @@ def Profil():
                     ti = time.time()
                     for i in range(len(pozice)):
                         #print(pozice[i])
-                        if i %(kontrola_vypisovani) == 0:
+                        if (i+1) %(kontrola_vypisovani) == 0:
                             tir = ti+1
                             ti = time.time()
                             print(i,": ",(ti+1-tir)," sek")
@@ -1287,7 +1065,7 @@ def Profil():
                     return nasledne,predchozi,time.time()
         def Zapismatovepozice(databaze):
             for j in databaze:
-                if primitiv_JeMat(j) == True:
+                if easy_JeMat(j) == True:
                     j[4] = 0
             return
         """Zapismatovepozice(pozice)
@@ -1342,7 +1120,7 @@ def Profil():
                     print(ver)
                     for m in range(len(ver)):
                         print(databaze[ver[m]],"\n")"""
-                if i%(radky+sloupce)**(3) == 0:
+                if (i+1)%(radky+sloupce)**(3) == 0:
                     tim = ti+1
                     ti = time.time()
                     print(i,": ",ti+1-tim," sek")
@@ -1476,7 +1254,7 @@ def Profil():
                     databaze[i][4] = "Nex"
                 elif databaze[i][2] == "X":
                     databaze[i][4] = "R"
-                elif databaze[i][5] not in ["B","C"] and nasledne[i] == []:
+                elif databaze[i][5] not in ["B","C"] and nasledne[i] == [] :#or databaze[i][4] == None:
                     databaze[i][4] = "Pat"
             return databaze
         #print("ara")
@@ -1508,7 +1286,7 @@ def Profil():
         pozice = Redukuj(pozice)
         print("Část 4 hotova, zapisuje se")
         #Pis("Pozice_",pozice,radky,sloupce)
-        Pispekne("Format_Pozice_",pozice,radky,sloupce)
+        #Pispekne("Format_Pozice_",pozice,radky,sloupce) #xx
         """pozice = Nahraj("Pozice_20x8.txt")
         purepozice = [[]for i in range(len(pozice))]
         for i in range(len(pozice)):
@@ -1516,9 +1294,9 @@ def Profil():
         nasledne,predchozi,rantajm_pre = Stromekc()
         pozice = Remizyzero(pozice)
         """Pis("Remizy_",pozice,radky,sloupce)
-        Pispekne("Format_Remizy_",pozice,radky,sloupce)
+        Pispekne("Format_Remizy_",pozice,radky,sloupce)"""
         pozice = Remizyjedna(pozice)
-        Pis("RemizyJ_",pozice,radky,sloupce)
+        """Pis("RemizyJ_",pozice,radky,sloupce)
         Pispekne("Format_RemizyJ_",pozice,radky,sloupce)"""
         print("Počítám matování")
         Zapismatovepozice(pozice)
@@ -1531,9 +1309,8 @@ def Profil():
             pocet = 0
             pozice = Matovanizpetne(pozice,predchozi,nasledne,n)
             diagram = []
-            progre = 2**((radky+sloupce)//2+7)
             for i in range(len(pozice)):
-                    if (i+1)%progre == 0:
+                    if (i+1)%(kontrola_matovani*8) == 0:
                         print(i)
                     if pozice[i][4] is None:
                         suma+=2*(radky+sloupce)
@@ -1599,13 +1376,6 @@ def Profil():
                 except FileNotFoundError:
                     continue
         return bylo
-    #Celakoncovka(15,8)
-    #input()
-    """uffff = time.time()
-    Celakoncovka(20,5)
-    jetotam = time.time()
-    print("\n\nUFF. Trvalo to",(jetotam-uffff)//60," minut.")
-    input("\n\n\nKONEC\n\n\n")"""
 
     def Koncovka_nahodne(bylo=[]):
         while len(bylo)!=100:
@@ -1669,11 +1439,11 @@ def Profil():
                       print("Není číslo")
                       pass
         if [a,b,a*b] not in bylo:
-            Celakoncovka(a,b,0)
+            Celakoncovka(a,b)
         else:
             potvrzeni = input("Tahle koncovka je už udělaná. Chceš ji vygenerovat znova? (A,+)")
             if potvrzeni in ["A","a","+"]:
-                Celakoncovka(a,b,0)
+                Celakoncovka(a,b)
             else:
                 print("Takže ne. Ok, končím program.")
     print("Tohle je program na generování koncovek král a věž proti králi. Jakým způsobem mám koncovky vygenerovat?")
