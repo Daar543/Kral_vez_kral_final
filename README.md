@@ -75,4 +75,9 @@ B = bílý, C = černý, N = nikdo
 3. Program Hotovo_hraj
 
 Tento program dokáže simulovat skutečnou šachovou hru. O tom, který tah je dobrý či nikoli, rozhoduje právě ohodnocení dané pozice, viz 2.5.
-Při spuštění programu "Hotovo_hraj" bude uživatel dotázán, aby specifikoval velikost šachovnice. Po zadání této velikosti je zkontrolováno, zdali se soubor vygenerovaný programem ZkousFin nachází v dané složce, a pokud ano, uživatel může zvolit styl hry: sám proti počítači, hráč proti hráči, či počítač proti počítači.
+Při spuštění programu "Hotovo_hraj" bude uživatel dotázán, aby specifikoval velikost šachovnice. Po zadání této velikosti je zkontrolováno, zdali se soubor vygenerovaný programem ZkousFin nachází v dané složce, a pokud ano, uživatel může zadat číslo pozice (odpovídá řádku v textovém souboru Format_Pozice_Finish...) nebo zkusit napsat pozici sám volbou "0", nebo nechat pozici náhodně, volbou "-1". 
+Počítač pak bude z výsledné pozice hrát nejlepší tahy (je-li jich více, pak náhodně) a uživateli se zobrazí pozice po tomto provedeném tahu - musí tedy zapojit svoji představivost. 
+Další tah spustíte klávesou "Enter". Pokud před strisknutím klávesy "Enter" zadáte "A" nebo "a", počítač ihned dohraje pozici až do matu.
+Vždy po dokončení pozice se na výstup vytiskne i původní pozice a zápis jednotlivých tahů.
+Po dalším stisknutí "Enter" se program neukončí, uživatel může zadat další pozici, ze které se bude hrát, ovšem na šachovnici stejných rozměrů (již se nemusí znovu načítat).
+
