@@ -532,7 +532,7 @@ def Profil():
         def Barvafigury(index):
             return (index%2)
         def JeLegalni(konpozice): #zkontroluje souřadnice obou králů; liší-li se v obou souřadnicích max. o 1, vzájemně se napadají
-            if konpozice[1] == "X" or konpozice[0] == "X": #v každé legální pozici musí být oba králové na šachovnici
+            if not konpozice[0] or konpozice[0] == "X" or konpozice[1] == "X": #v každé legální pozici musí být oba králové na šachovnici
                 return False
             bilkra = SouradnicePole(konpozice[0])
             cerkra = SouradnicePole(konpozice[1])
@@ -707,7 +707,7 @@ def Profil():
         
 
         #4. PŘESUN
-        def Presunpozice(databaze,cislo,figura,pole): #Narozdíl od Finalpozice toto pouze řeší vzniknutí nové pozice přesunutím dané figury
+        def Presunpozice(databaze,cislo,figura,pole): #Vzniknutí nové pozice přesunutím dané figury
             j = (databaze[cislo])[:]
             if pole not in j: #jestli pole není obsazeno
                 j[figura] = pole
@@ -737,13 +737,14 @@ def Profil():
                     v = TahyObec(databaze,cislopozice,figura)
                     for k in range(len(v)):
                         p = j[:]
-                        p[figura] = v[k]
-                        p[i] = u #"vyplivneme" figuru na této pozici
-                        r.append (p)
+                        if v[k] not in j:
+                            p[figura] = v[k]
+                            p[i] = u #"vyplivneme" figuru na této pozici
+                            r.append (p)
             return r
 
         #CESTA OD MATU - NEJTĚŽŠÍ
-        def Matovanicislo1(databaze,puredatabaze):
+        """def Matovanicislo1(databaze,puredatabaze):
             print (len(databaze))
             k = len(databaze)
             nultadatabaze = []
@@ -761,9 +762,9 @@ def Profil():
             Pis("matovepozice",databaze,radky,sloupce)
             Pispekne("format_matovepozice",databaze,radky,sloupce)
             Pispekne("databaze0__",nultadatabaze,radky,sloupce)
-            return nultadatabaze
+            return nultadatabaze"""
 
-        def RemizyBT(databaze,puredatabaze): #pouze remízy na nedostatek matroše; první tah - vyplivnutí
+        """def RemizyBT(databaze,puredatabaze): #pouze remízy na nedostatek matroše; první tah - vyplivnutí
             start = time.time()
             zakladniremizy = []
             v = len(databaze)
@@ -785,7 +786,7 @@ def Profil():
             print(end-start)
             print(str((end-start)/(radky*sloupce))+" sekundy na pole")
             print("remizyBT")
-            return zakladniremizy
+            return zakladniremizy"""
 
         #STROMEČEK Z TAHŮ
         def Stromek(pozice):
@@ -948,10 +949,10 @@ def Profil():
                                 for j in range(len(zatim[i])):
                                     zatim[i][j]+=len(pozice)//2
                             for i in range(len(zatim)):
-                                refer = pozice[i]
+                                refer = pozice[i] #index výchozí pozice
                                 for j in reversed(range(len(zatim[i]))):
-                                    r = zatim[i][j]
-                                    if refer[5] != "C" and pozice[r][5] != "B":
+                                    r = zatim[i][j] #index nové pozice
+                                    if refer[5] != "C" and pozice[r][5] != "B": #nemůže dávat na začátku šach, nemůže táhnout do šachu
                                         nasledne[i].append(r)
                                     if pozice[r][5] != "C":
                                         predchozi[i].append(r)
@@ -1030,19 +1031,19 @@ def Profil():
                                 predchozi[i].append(r)
                     zatim,predb_seznam = [],[]
                     
-                    Pis("Stromecek_nasl",nasledne,radky,sloupce)
+                    #Pis("Stromecek_nasl",nasledne,radky,sloupce)
                     Pispekne("Format_Stromecek_nasl",nasledne,radky,sloupce)
                     for i in range(len(nasledne)):
                         if i % (zacatek_ocislovani) == 0:
                             print(i)
                         nasledne[i].sort
-                    Pis("Stromecek_nasl",nasledne,radky,sloupce)
+                    #Pis("Stromecek_nasl",nasledne,radky,sloupce)
                     Pispekne("Format_Stromecek_nasl",nasledne,radky,sloupce)
                     #Výpliv
                     ti = time.time()
                     for i in range(len(pozice)):
                         #print(pozice[i])
-                        if (i+1) %(kontrola_vypisovani) == 0:
+                        if (i+1)%(kontrola_vypisovani) == 0:
                             tir = ti+1
                             ti = time.time()
                             print(i,": ",(ti+1-tir)," sek")
@@ -1060,7 +1061,7 @@ def Profil():
                                     except ValueError:
                                         continue
                         predchozi[i].sort()
-                    Pis("Stromecek_pred",predchozi,radky,sloupce)
+                    #Pis("Stromecek_pred",predchozi,radky,sloupce)
                     Pispekne("Format_Stromecek_pred",predchozi,radky,sloupce)
                     return nasledne,predchozi,time.time()
         def Zapismatovepozice(databaze):
@@ -1075,7 +1076,7 @@ def Profil():
         def Remizyzero(databaze):
             ti = time.time()
             for i in range(len(databaze)):
-                if i % (radky+sloupce)**(3) == 0:
+                if (i+1) % (radky+sloupce)**(3) == 0:
                     tim = ti+1
                     ti = time.time()
                     print(i,": ",ti+1-tim," sek")
@@ -1086,7 +1087,7 @@ def Profil():
         def Remizyjedna(databaze):
             ti = time.time()
             for i in range(len(databaze)):
-                if i%(radky+sloupce)**(2) == 0:
+                if (i+1)%(radky+sloupce)**(3) == 0:
                     tim = ti+1
                     ti = time.time()
                     print(i,": ",ti+1-tim," sek")
@@ -1110,16 +1111,6 @@ def Profil():
         def Matovanizpetne(databaze,predchozi,nasledne,tahy=0):
             ti = time.time()
             for i in range(len(databaze)):
-                """if databaze[i][0] == "c1" and databaze[i][1] == "a2" and databaze[i][2] == "b8" and databaze[i][3] == "B" and type(databaze[i][4]) == int: #and databaze[i][4] %2 == 0:
-                    print(databaze[i])
-                    ver = predchozi[i]
-                    print(ver)
-                    for m in range(len(ver)):
-                        print(databaze[ver[m]],"\n")
-                    ver = nasledne[i]
-                    print(ver)
-                    for m in range(len(ver)):
-                        print(databaze[ver[m]],"\n")"""
                 if (i+1)%(radky+sloupce)**(3) == 0:
                     tim = ti+1
                     ti = time.time()
@@ -1133,27 +1124,16 @@ def Profil():
                                 umi[4] = tahy+1
                 elif tahy%2 == 1:
                     if databaze[i][3] == "B" and databaze[i][4] == tahy: #tohle bude složitější
-                        ari = predchozi[i] #vyšší
-                        for se in ari: #se je číslo předchozí pozice
-                            kur = databaze[se]
-                            ap = kur[4] #číslo
-                            if ap not in ["R","R1"]:
-                                if ap == None:
-                                    databaze[se][4] = tahy + 1
-                                elif ap < tahy+1:
-                                    databaze[se][4] = tahy+1
-                                    dal = predchozi[se]
-                                    for cile in dal: #čísla v předchozích
-                                        far = nasledne[cile]
-                                        minim = tahy
-                                        for cislo in far:
-                                            a = databaze[cislo][4]
-                                            if a not in [None,"R","R1"] and a < minim:
-                                                minim = a
-                                        if minim%2 == 0:
-                                            databaze[cile][4] = minim+1
-                                        else:
-                                            aaaaaa = 1
+                        predseznam = predchozi[i]
+                        for cisla in predseznam: #číslo předchozí pozice
+                            novpoz = databaze[cisla]
+                            hodnoceni = novpoz[4] #číslo
+                            if hodnoceni not in ["R","R1"]:
+                                if hodnoceni == None:
+                                    databaze[cisla][4] = tahy + 1
+                                elif hodnoceni < tahy+1:
+                                    databaze[cisla][4] = tahy+1 #zvýším hodnocení, protože jsem černý na tahu
+
             if tahy%2 == 1:
                 for i in range(len(databaze)):
                     if databaze[i][3] == "C":

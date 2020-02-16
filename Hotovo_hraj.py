@@ -355,7 +355,7 @@ def Nova_Partie(databaze,puredatabaze,radky,sloupce):
         k = Blbuvzdornost(k,sloupce,radky)
         print("Bílý nebo černý na tahu? C/c černý, jinak bílý")
         strana = input().strip()
-        if strana[0].lower() == "c":
+        if strana and strana[0].lower() == "c":
             strana = 1
         else:
             strana = 0
@@ -474,7 +474,7 @@ def Nova_Partie(databaze,puredatabaze,radky,sloupce):
         Vypis(j)
         if j[4] == "Nex":
             print("Nepřípustná pozice")
-            return "Nelegalni"
+            return "Není co zapisovat"
         if j[4] == "R":
             print ("Remiza")
             if zapis == "":
@@ -482,7 +482,11 @@ def Nova_Partie(databaze,puredatabaze,radky,sloupce):
             else:
                 return zapis
         elif j[4] != 0 and j[4] != "0":
-            print("Hrac na tahu:",j[3])
+            if j[3] == "B":
+                strana = "Bílý"
+            else:
+                strana = "Černý"
+            print("Hrac na tahu:",strana,"; Zbývající tahy do matu:", (j[4]+1)//2)
             if zapis == "":
                if j[3] == "C":
                 zapis += "1... "
@@ -576,9 +580,9 @@ def Nova_Partie(databaze,puredatabaze,radky,sloupce):
                     a = 1
                 else:
                     a = random.randint(0,1)
-        cislopzc = random.randint(0,len(databaze)//2)-1+a*len(databaze)//2
-        while databaze[cislopzc][4] == "Nex":
-            cislopzc = random.randint(0,len(databaze)//2-1)+a*len(databaze)//2
+        cislopzc = (random.randint(0,len(databaze)//2)-1+a*len(databaze)//2)+1
+        while databaze[cislopzc-1][4] == "Nex":
+            cislopzc = (random.randint(0,len(databaze)//2-1)+a*len(databaze)//2)+1
     if cor == "a":
         zapsane = Hraj(databaze,puredatabaze,cislopzc-1) #začínám od nuly - první pozice = nultý řádek
     elif cor == "b":
@@ -590,7 +594,7 @@ def Nova_Partie(databaze,puredatabaze,radky,sloupce):
         print("Jakýže styl hry jsi chtěl? Nějaká blbost. Restartuj program")
         raise ValueError
     print("\n\n\nPůvodní pozice:")
-    Vypis(databaze,cislopzc)
+    Vypis(databaze,cislopzc-1)
     print("Číslo pozice:",cislopzc)
     print("\n\n\nZápis:")
     print(zapsane)
