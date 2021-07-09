@@ -647,18 +647,19 @@ def Zadej_Velikost():
                     pass
     return a,b
 
-
-
-print("Nejdřív vyber velikost šachovnice.")
-a,b = Zadej_Velikost()
-a,b = str(a),str(b)
-zacatek = "Format_Pozice_Finish"+a+"x"+b+".txt"
 soubor = False
-try:
-    soubor = open(zacatek,"r")
-    soubor = True
-except ValueError:
-    print("Nemám databázi pro tuto šachovnici. Nejdříve ji vygeneruj.")
+while not soubor:
+    print("Nejdřív vyber velikost šachovnice.")
+    
+    a,b = Zadej_Velikost()
+    a,b = str(a),str(b)
+    zacatek = "Format_Pozice_Finish"+a+"x"+b+".txt"
+    try:
+        soubor = open(zacatek,"r")
+        soubor = True
+    except (ValueError,FileNotFoundError):
+        print("Nemám databázi pro tuto šachovnici. Nejdříve ji vygeneruj - pomocí souboru ZkousFin.py.")
+        input()
 if soubor:
     dtb,prdtb = Hotovo(zacatek,a,b)
     znova = True
