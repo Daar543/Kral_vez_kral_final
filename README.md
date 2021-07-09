@@ -38,7 +38,25 @@ Existuje-li databáze daných rozměrů a nebylo-li povoleno přepisování (viz
 
 Význam těchto výstupů je popsán v dokumentaci pro vývojáře. 
 
-2. Jak číst výstupní soubor
+1.3 Výstupní soubory
+
+1.3.1 Format_Pozice_Finish
+
+Viz část 2 (Jak číst výstupní soubor). Pouze tento soubor je nutný pro samotné hraní - ostatní soubory lze bez problému smazat (po vygenerování).
+
+1.3.2 Pozice_Finish
+
+Obsahuje stejná data jako soubor v 1.3.1, pouze bez konců řádků.
+
+1.3.3. Format_Stromecek_pred, Format_Stromecek_nasl
+
+Soubory reprezentující strom hry. Každý řádek obsahuje seznam ID pozic, z nichž se dalo dostat do pozice, (resp. do nichž se dá dostat z pozice), jejíž ID je číslo řádku. Algoritmus pro generování pozic je vždy generuje ve stejném pořadí, a tak ID jednoznačně určuje danou pozici.
+
+1.3.4 Vyvoj_Pozice_Finish
+
+Spojitý graf ukazující, že [osa X] pozic potřebuje [osa Y] tahů do matu.
+
+2. Jak číst výstupní soubor 
 
 Výstupní soubor obsahuje na každém řádku šestimístný seznam, kde jednotlivé prvky značí (číslováno 1-6):
 
