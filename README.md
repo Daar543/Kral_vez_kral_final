@@ -6,7 +6,8 @@ Program "ZkousFin" vygeneruje všechny možné pozice (tento soubor se dále bud
 hodnocení, které rozhodne o tom, zdali je daná pozice remíza, či za kolik nejvíce půltahů (jeden půltah = hraje bílý nebo černý) lze vynutit mat.
 Výstupem je soubor, obsahující všechny pozice ve formátu pythonovských seznamů.
 
-1.1 - Možné vstupy
+1.1 Možné vstupy
+
 Při spuštění dostane uživatel 4 možnosti + možnost ukončení programu. Volba možnosti se provádí stisknutím příslušného tlačítka na klávesnici (na velikosti nezáleží) a stisknutím klávesy "Enter".
 Je-li vstup neplatný či je stisknuta pouze klávesa "Enter", provede se defaultní možnost, označena "Jinak".
 
